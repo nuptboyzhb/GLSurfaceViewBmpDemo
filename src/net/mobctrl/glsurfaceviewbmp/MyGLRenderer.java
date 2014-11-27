@@ -9,25 +9,43 @@ import android.opengl.GLSurfaceView.Renderer;
 import android.opengl.GLU;
 
 /**
- * @date 2014Äê10ÔÂ20ÈÕ ÏÂÎç2:49:17
+ * @date 2014ï¿½ï¿½10ï¿½ï¿½20ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½2:49:17
  * @author Zheng Haibo
  * @Description: TODO
  */
 public class MyGLRenderer implements Renderer {
 	Context context; // Application's context
 	Random r = new Random();
-	//private Square square;
+	// private Square square;
 	private GLBitmap glBitmap;
 	private int width = 0;
 	private int height = 0;
-	private long frameSeq = 0;
 	private int viewportOffset = 0;
-	private int maxOffset = 400;
 
 	public MyGLRenderer(Context context) {
 		this.context = context;
-		//square = new Square();
+		// square = new Square();
 		glBitmap = new GLBitmap();
+		setGLViewPortAnim(true, 20, 10, 400, new ViewportChangeListener() {
+
+			@Override
+			public void onOutAnimFinished() {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void onAnimStart() {
+				// TODO Auto-generated method stub
+
+			}
+
+			@Override
+			public void onAnimEnd() {
+				// TODO Auto-generated method stub
+
+			}
+		});
 	}
 
 	@Override
@@ -52,7 +70,7 @@ public class MyGLRenderer implements Renderer {
 	}
 
 	/**
-	 * Ã¿¸ô16msµ÷ÓÃÒ»´Î
+	 * Ã¿ï¿½ï¿½16msï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½
 	 */
 	@Override
 	public void onDrawFrame(GL10 gl) {
@@ -64,11 +82,12 @@ public class MyGLRenderer implements Renderer {
 											// units away
 		// square.draw(gl);
 		glBitmap.draw(gl);
-		changeGLViewport(gl);
+		// changeGLViewport(gl);
+		changeMyGLViewport(gl);
 	}
 
 	/**
-	 * Í¨¹ý¸Ä±äglµÄÊÓ½Ç»ñÈ¡
+	 * Í¨ï¿½ï¿½Ä±ï¿½glï¿½ï¿½ï¿½Ó½Ç»ï¿½È¡
 	 * 
 	 * @param gl
 	 */
@@ -78,7 +97,7 @@ public class MyGLRenderer implements Renderer {
 		viewportOffset++;
 		// The
 		// Current
-		if (frameSeq % 100 == 0) {// Ã¿¸ô100Ö¡£¬ÖØÖÃ
+		if (frameSeq % 100 == 0) {// Ã¿ï¿½ï¿½100Ö¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 			gl.glViewport(0, 0, width, height);
 			viewportOffset = 0;
 		} else {
@@ -88,6 +107,78 @@ public class MyGLRenderer implements Renderer {
 					+ maxOffset * 2, this.height - viewportOffset * 2 * k
 					+ maxOffset * 2);
 		}
+	}
+
+	private long frameSeq = 0;
+	private int maxOffset = 400;
+	private int viewPortOutSpeed = 40;
+	private int viewPortInSpeed = 40;
+	private boolean viewportAnimEnable = false;
+
+	public interface ViewportChangeListener {
+		public void onAnimStart();
+
+		public void onOutAnimFinished();
+
+		public void onAnimEnd();
+	}
+
+	private ViewportChangeListener viewportChangeListener;
+
+	/**
+	 * ï¿½Ä±ï¿½ï¿½Ó½ï¿½
+	 * 
+	 * @param gl
+	 */
+	private void changeMyGLViewport(GL10 gl) {
+		if (!viewportAnimEnable) {
+			return;
+		}
+		frameSeq++;
+		viewportOffset++;
+		if (frameSeq < maxOffset / viewPortOutSpeed) {
+			gl.glViewport(-viewportOffset * viewPortOutSpeed, -viewportOffset
+					* viewPortOutSpeed * height / width, this.width
+					+ viewportOffset * 2 * viewPortOutSpeed, this.height
+					+ viewportOffset * 2 * viewPortOutSpeed * height / width);
+			if (viewportChangeListener != null && frameSeq == 1) {
+				viewportChangeListener.onAnimStart();
+			}
+		} else if (frameSeq == maxOffset / viewPortOutSpeed) {
+			viewportOffset = 0;// change twice
+			if (viewportChangeListener != null) {
+				viewportChangeListener.onOutAnimFinished();
+			}
+		} else if (frameSeq > maxOffset / viewPortOutSpeed
+				&& viewportOffset <= maxOffset / viewPortInSpeed) {
+			gl.glViewport(-maxOffset + viewportOffset * viewPortInSpeed,
+					-maxOffset * height / width + viewportOffset
+							* viewPortInSpeed * height / width, this.width
+							- viewportOffset * 2 * viewPortInSpeed + maxOffset
+							* 2, this.height - viewportOffset * 2
+							* viewPortInSpeed * height / width + maxOffset * 2
+							* height / width);
+			if (viewportChangeListener != null
+					&& viewportOffset == maxOffset / viewPortInSpeed) {
+				viewportChangeListener.onAnimEnd();
+			}
+		} else {
+			gl.glViewport(0, 0, width, height);
+			// reset the param
+			//frameSeq = 0;// loop
+			//viewportOffset = 0;// loop
+		}
+
+	}
+
+	public void setGLViewPortAnim(boolean enable, int viewPortOutSpeed,
+			int viewPortInSpeed, int maxOffset,
+			ViewportChangeListener viewportChangeListener) {
+		this.viewportAnimEnable = enable;
+		this.viewPortOutSpeed = viewPortOutSpeed;
+		this.viewPortInSpeed = viewPortInSpeed;
+		this.maxOffset = maxOffset;
+		this.viewportChangeListener = viewportChangeListener;
 	}
 
 	@Override
